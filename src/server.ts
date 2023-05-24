@@ -1,48 +1,90 @@
-import { PrismaClient } from "@prisma/client";
-import { v4 as uuidv4 } from "uuid";
+import fastify from 'fastify';
+import { PrismaClient } from '@prisma/client';
 
+const server = fastify();
 const prisma = new PrismaClient();
 
-interface User {
-  id: string;
-  name: string;
-  description: string;
-  age: number;
-  hasHumps: boolean;
-}
+server.get('/camelos', async (request, reply) => {
+  const { search } = request.query as { search?: string };
+  let camelos;
+  
+  if (search) {
+    camelos = await prisma.camelo.findMany({
+      where: {
+        OR: [
+          { nome: { contains: search, mode: 'insensitive' } },
+          { descricao: { contains: search, mode: 'insensitive' } }
+        ]
+      }
+    });
+  } else {
+    camelos = await prisma.camelo.findMany();
+  }
 
-async function createUser(user: User) {
-  const createdUser = await prisma.user.create({
+  return camelos;
+});
+
+server.post('/camelos', async (request, reply) => {
+  const { nome, descricao, idade, temCorcova } = request.body as {
+    nome: string;
+    descricao: string;
+    idade: number;
+    temCorcova: boolean;
+  };
+
+  const camelo = await prisma.camelo.create({
     data: {
-      ...user,
-      id: uuidv4(), // Gerar um novo UUID
+      nome,
+      descricao,
+      idade,
+      temCorcova,
     },
   });
-  console.log("User created:", createdUser);
-}
 
-// Resto do código...
+  return camelo;
+});
 
-async function main() {
+server.put('/camelos/:id', async (request, reply) => {
+  const { id } = request.params as { id: string };
+  const { nome, descricao, idade, temCorcova } = request.body as {
+    nome: string;
+    descricao: string;
+    idade: number;
+    temCorcova: boolean;
+  };
+
+  const updatedcamelo = await prisma.camelo.update({
+    where: { id: parseInt(id, 10) },
+    data: {
+      nome,
+      descricao,
+      idade,
+      temCorcova,
+    },
+  });
+
+  return updatedcamelo;
+});
+
+server.delete('/camelos/:id', async (request, reply) => {
+  const { id } = request.params as { id: string };
+
+  await prisma.camelo.delete({
+    where: { id: parseInt(id, 10) },
+  });
+
+  return { message: 'camelo deletado com sucesso!' };
+});
+
+const start = async () => {
   try {
     await prisma.$connect();
-
-    // Exemplo de criação de um usuário
-    const newUser: User = {
-      id: "", // O ID será gerado pelo código
-      name: "John Doe",
-      description: "Lorem ipsum",
-      age: 25,
-      hasHumps: false,
-    };
-    await createUser(newUser);
-
-    // Resto do código...
-  } catch (error) {
-    console.error("Error:", error);
-  } finally {
-    await prisma.$disconnect();
+    await server.listen(3000);
+    console.log(`Servidor rodando em http://localhost:3000`);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
   }
-}
+};
 
-main();
+start();
