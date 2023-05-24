@@ -13,5 +13,5 @@ model Camelo{
   nome String
   descricao String
   idade Int
-  temChifre Boolean
+  temCorcova Boolean
 }

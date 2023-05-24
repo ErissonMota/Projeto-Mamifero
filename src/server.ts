@@ -79,8 +79,8 @@ server.delete('/camelos/:id', async (request, reply) => {
 const start = async () => {
   try {
     await prisma.$connect();
-    await server.listen(3000);
-    console.log(`Servidor rodando em http://localhost:3000`);
+    await server.listen(5555);
+    console.log(`🐫 Servidor rodando em http://localhost:5555`);
   } catch (err) {
     console.error(err);
     process.exit(1);
